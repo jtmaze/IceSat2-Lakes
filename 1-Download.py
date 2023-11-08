@@ -36,8 +36,8 @@ del(bound_box_geom, bound_box)
 # %%% 2.2 Specify the timeframe
 
 # Timeframe for download, will dates outside the range make the icepyx spaz
-begining = '2018-11-01'
-end = '2023-12-01'
+begining = '2017-12-01'
+end = '2023-12-31'
 time = [begining, end]
 
 # %%% 2.3 Create a ipx.Query object
