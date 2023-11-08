@@ -8,31 +8,51 @@ IceSat2 download script
 @author: jmaze
 """
 
-# %% 1. Libraries
+# %% 1. Libraries and paths
 # ----------------------------------------------------------------------------
 
 import icepyx as ipx
+import geopandas as gpd
 
-download_path = '/Users/jmaze/Documents/projects/IceSat2-Lakes/data_raw'
+download_path = '/Users/jmaze/Documents/projects/IceSat2-Lakes/data_raw/'
 
-# %% 2. Download
+# %% 2. Download the IceSat2 data
 
-begining = '2022-11-01'
-end = '2023-03-01'
+# %%% 2.1 Import the study bounds
+
+# Have to modify the supported drivers for GeoPandas to read ('r') .kml files
+gpd.io.file.fiona.drvsupport.supported_drivers['LIBKML'] = 'r'
+
+# Study bounds came from going to Google Earth and drawing an arbitrary box
+bound_box = gpd.read_file(download_path + 'study_bounds.kml')
+
+# Pulls the geometry from the first row of the dataframe using the iloc[] method
+bound_box_geom = bound_box['geometry'].iloc[0]
+# Remove the z dimension or icepyx.Query will spaz
+coords_list = [(x, y) for x, y, z in bound_box_geom.exterior.coords]
+
+del(bound_box_geom, bound_box)
+
+# %%% 2.2 Specify the timeframe
+
+# Timeframe for download, will dates outside the range make the icepyx spaz
+begining = '2018-11-01'
+end = '2023-12-01'
 time = [begining, end]
-bound_box = [ 31.966824, -1.833499, 33.875129, -0.495605] 
-# Switch to somewhere in Western Greenland
+
+# %%% 2.3 Create a ipx.Query object
 
 # Pick spatial and temporal attributes
-ds_identifier = ipx.Query(product = 'ATL06', 
-                          spatial_extent = bound_box,
-                          date_range = time)
+ATL06ds_identifier = ipx.Query(product = 'ATL06', 
+                               spatial_extent = coords_list,
+                               date_range = time)
 
+# %%% 2.4 Download
 
-ds_identifier.order_granules()
+# !!! When getting the granuales, 
+# !!! You will need to enter Earth Data username and password here 
+ATL06ds_identifier.order_granules()
 
-ds_identifier.download_granules(path = download_path)
+# Download the data into folder. 
+ATL06ds_identifier.download_granules(path = download_path + 'ATL06/')
 
-
-
-ds_identifier.earthdata_login('jmaze', 'jmaze@uoregon.edu')
