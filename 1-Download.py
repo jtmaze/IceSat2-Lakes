@@ -14,7 +14,8 @@ IceSat2 download script
 import icepyx as ipx
 import geopandas as gpd
 
-download_path = '/Users/jmaze/Documents/projects/IceSat2-Lakes/data_raw/'
+working_dir = "/Documents/projects/"
+download_path = working_dir + 'IceSat2-Lakes/data_raw/'
 
 # %% 2. Download the IceSat2 data
 
