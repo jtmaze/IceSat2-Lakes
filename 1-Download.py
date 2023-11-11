@@ -8,14 +8,15 @@ IceSat2 download script
 @author: jmaze
 """
 
-# %% 1. Libraries and paths
+# %% 1. Libraries and directories
 # ----------------------------------------------------------------------------
 
 import icepyx as ipx
 import geopandas as gpd
+from pprint import pprint
 
-working_dir = "/Documents/projects/"
-download_path = working_dir + 'IceSat2-Lakes/data_raw/'
+working_dir = "/Users/jmaze/Documents/projects/IceSat2-Lakes/"
+download_path = working_dir + 'data_raw/'
 
 # %% 2. Download the IceSat2 data
 
@@ -41,19 +42,41 @@ begining = '2017-12-01'
 end = '2023-12-31'
 time = [begining, end]
 
-# %%% 2.3 Create a ipx.Query object
+# %%% 2.3 Create a ipx.Query object and subset the variables
 
 # Pick spatial and temporal attributes
-ATL06ds_identifier = ipx.Query(product = 'ATL06', 
-                               spatial_extent = coords_list,
-                               date_range = time)
+ATL06_identifier = ipx.Query(product = 'ATL06', 
+                             spatial_extent = coords_list,
+                             date_range = time)
 
-# %%% 2.4 Download
+# See a list of potential inputs
+ATL06_identifier.order_vars.avail(options = True)
+
+pprint(ATL06_identifier.order_vars.avail())
+
+# Make a wanted variable list
+ATL06_identifier.order_vars.wanted
+# Add variables of interest to wanted list
+ATL06_identifier.order_vars.append(var_list = ['h_li', 'delta_time',
+                                               'latitude', 'longitude'])
+# Look the wanted vars
+pprint(ATL06_identifier.order_vars.wanted)
+
+
+# %%% 2.4 Download IceSat2
+
 
 # !!! When getting the granuales, 
 # !!! You will need to enter Earth Data username and password here 
-ATL06ds_identifier.order_granules()
+ATL06_identifier.order_granules(Coverage = ATL06_identifier.order_vars.wanted)
+# The coverage argument subsets the granuals based on the variables wanted
 
-# Download the data into folder. 
-ATL06ds_identifier.download_granules(path = download_path + 'ATL06/')
+# Download the data into folder on local machine
+ATL06_identifier.download_granules(path = download_path + 'ATL06/')
+
+
+
+
+
+
 
