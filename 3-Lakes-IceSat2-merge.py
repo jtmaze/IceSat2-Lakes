@@ -11,11 +11,13 @@ Created on Wed Nov  8 08:56:33 2023
 # ============================================================================
 
 import geopandas as gpd
+import fiona
+import pprint
 
-
-working_dir = '/Users/jmaze/Documents/projects/IceSat2-Lakes'
+# !!! Change this line for different local machines
+working_dir = '/Users/jtmaz/Documents/projects/IceSat2-Lakes'
 data_raw = working_dir + '/data_raw/'
-data_output = working_dir + 'data_output'
+data_intermediate = working_dir + '/data_intermediate/'
 
 # %% 2. Greenland Lakes data and filter based on bouding box
 # ----------------------------------------------------------------------------
@@ -35,7 +37,10 @@ gr_lakes = gr_lakes.set_crs(crs = crs_proj)
 # %%% 2.2 Import the project boundary
 
 # Have to modify the supported drivers for GeoPandas to read ('r') .kml files
-gpd.io.file.fiona.drvsupport.supported_drivers['LIBKML'] = 'r'
+# !!! Read this line for MacOS
+# gpd.io.file.fiona.drvsupport.supported_drivers['LIBKML'] = 'r'
+# !!! read this line for Windows
+fiona.drvsupport.supported_drivers['LIBKML'] = 'r'
 
 # Study bounds came from going to Google Earth and drawing an arbitrary box
 bound_box = gpd.read_file(data_raw + 'study_bounds.kml')
