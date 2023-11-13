@@ -14,7 +14,6 @@ import geopandas as gpd
 import pandas as pd
 import fiona
 import shapely
-import pprint
 import matplotlib.pyplot as plt
 
 
