@@ -13,15 +13,23 @@ Created on Sun Nov 12 16:34:39 2023
 import geopandas as gpd
 # import pandas as pd
 import matplotlib.pyplot as plt
+import datetime as dt
 
 # !!! Change this for different local machines
 working_dir = '/Users/jmaze/Documents/projects/IceSat2-Lakes'
 data_output = working_dir + '/data_output/'
+data_raw = working_dir + '/data_raw/'
 
-# %% 2. Read the data and explore basic attributes
+# %% 2. Read the IceSat2 data & explore basic attributes
 # ----------------------------------------------------------------------------
 # ============================================================================
 
+# %%% 2.1 Read the lake boundaries and IceSat2 points.
+
+# Read the lake boundaries?
+gr_lakes = gpd.read_file(data_raw + 'Greenland_IIML_2017.shp')
+
+# Read the filtered IceSat2 points. 
 lake_pts_icesat = gpd.read_file(data_output + 'lake_pts_icesat.shp')
 
 # Need to make the LakeID a string
@@ -30,16 +38,45 @@ lake_pts_icesat['LakeID'] = lake_pts_icesat['LakeID'].astype(str)
 # How many points are we looking at per lake?
 (lake_pts_icesat['LakeID'].value_counts())
 
+# %%% 2.2 Convert delta_time to a legible date
+
+# Writing a function and using the .apply method should make this faster for large data. 
+def calendar_from_delta (delta_time):
+    # Make a datetime objct based on the ATL06 epoch
+    ATL06_epoch = dt.datetime(2018, 1, 1)
+    # Make time delta_time a datetime object (seconds)
+    delta_time_seconds = dt.timedelta(seconds = delta_time)
+    # Add the seconds since the ATL06 epoch to the epoch. 
+    obs_date = delta_time_seconds + ATL06_epoch
+    # Truncate time information for just ymd
+    obs_date = obs_date.date()
+    
+    return(obs_date)
+
+# Run the function on the DataFrame. 
+lake_pts_icesat2 = lake_pts_icesat.assign(obs_date = lake_pts_icesat['delta_time'].apply(calendar_from_delta))
+
+#Checking on the function
+lake_pts_icesat2 = lake_pts_icesat2.sort_values('obs_date')
+
+# %%% 2.2 Summarize IceSat data by lake
+
 # Generate an interesting summary table for each lake
 summary1 = lake_pts_icesat.groupby('LakeID').agg({'height': ['std', 'mean'],
                                                   'Area': 'first',
-                                                  'LakeID': 'size'})
+                                                  'LakeID': 'size',
+                                                  })
 
 # Change the column names for the summary dataframe. 
 summary1.columns = ['height_std', 'height_mean', 'lake_area', 'observation_count']
 
+# %%% 2.3 Query for lakes w. robust data
+
 # Filter lakes that don't have ridiculously high std?
 summary1_robust = summary1.query('height_std < 30 & observation_count > 25')
+
+# %%% 2.3 Visualize 
+
 # Relationship between observation count and height_std?
 summary1_robust.plot.scatter(x = 'observation_count', y = 'height_std')
 # Relationship between lake_area and height_std?
@@ -47,7 +84,7 @@ summary1_robust.plot.scatter(x = 'lake_area', y = 'height_std')
 # Relationship between lake_area and observation_count?
 summary1_robust.plot.scatter(x = 'lake_area', y = 'observation_count')
 
-# %% 3. Plot the distributions of altimeter measurements for the different lakes
+# %% 3. Plot the distributions of elevation by LakeID
 # ----------------------------------------------------------------------------
 # ============================================================================
 
