@@ -17,7 +17,7 @@ import fiona
 from pprint import pprint
 
 # !!! Modify this line for different computers
-working_dir = "/Users/jtmaz/Documents/projects/IceSat2-Lakes/"
+working_dir = "/Users/jmaze/Documents/projects/IceSat2-Lakes/"
 download_path = working_dir + 'data_raw/'
 
 # %% 2. Download the IceSat2 data
@@ -42,9 +42,9 @@ del(bound_box_geom, bound_box)
 
 # %%% 2.2 Specify the timeframe for download
 
-# Shortened timeframe to Winter 2022, makes dates more managable. 
-begining = '2021-10-01'
-end = '2022-04-30'
+# Trying all years of data and larger study area.
+begining = '2018-10-01'
+end = '2023-10-01'
 time = [begining, end]
 
 # %%% 2.3 Create a ipx.Query object and subset the variables

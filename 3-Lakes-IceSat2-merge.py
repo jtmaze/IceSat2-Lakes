@@ -49,7 +49,7 @@ gr_lakes = gr_lakes.set_crs(crs = crs_proj)
 fiona.drvsupport.supported_drivers['LIBKML'] = 'r'
 
 # Study bounds came from going to Google Earth and drawing an arbitrary box
-bound_box = gpd.read_file(data_raw + 'study_bounds_small.kml')
+bound_box = gpd.read_file(data_raw + 'study_bounds.kml')
 print(bound_box.crs)
 
 

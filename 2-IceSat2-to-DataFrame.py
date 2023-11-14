@@ -18,11 +18,10 @@ import glob
 import os
 import h5py
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+import datetime as dt
 
 # !!! Change this line for different local machines
-working_dir = '/Users/jtmaz/Documents/projects/IceSat2-Lakes'
+working_dir = '/Users/jmaze/Documents/projects/IceSat2-Lakes'
 
 #Sub folders in larger project. 
 data_raw = working_dir + '/data_raw/'
@@ -65,6 +64,7 @@ pprint(ATL06_reader.vars.avail())
 # https://github.com/ICESAT-2HackWeek/ICESat-2-Hackweek-2023/blob/main/book/tutorials/Hydrology/Hackweek.ipynb
 
 # This nested loop gets very slow if I crank up the dataset size, can I parallelize?
+# Might be a way to paralellize this with by turning it into a function
 
 # Use the glob library to match all the file paths into a list. 
 file_list = glob.glob(os.path.join(ATL06_path, 'processed_ATL06*.h5'))
@@ -88,30 +88,22 @@ for index, file_path in enumerate(file_list):
             height = data.get(os.path.join(subgroup, 'h_li'))
             delta_time = data.get(os.path.join(subgroup, 'delta_time'))
             
-            # Ignores subgroups where there is no 
+            # Only keeps subgroups with data
             if all(x is not None for x in [lat, lon, height, delta_time]):
                 df = pd.DataFrame(data ={
                     'lat': lat[:],
                     'lon': lon[:],
                     'height': height[:],
-                    'delta_time': delta_time[:]
-                })
+                    'delta_time': delta_time[:]})
                 # Designate the laser number
                 df['laser_id'] = subgroup[:5]
                 # Concat the new data frames
                 if 'combined_data' not in locals():
                     combined_data = df
                 else:
-                    combined_data = pd.concat([combined_data, df])
-                    
+                    combined_data = pd.concat([combined_data, df])    
     # Close the files
     data.close()
-
-# !!! Might be a way to paralellize this with by turning it into a function
-# with ThreadPoolExecutor() as executor:
-    # data = executor.map(new_function, file_list)
-
-# combined_data = pd.concat([df for result_list in results for df in result_list], ignore_index=True)
 
 # Clean up the environment
 del(data, df, lat, lon, delta_time, height, file_list_subset, file_list, pattern, subgroup, 
@@ -121,29 +113,24 @@ del(data, df, lat, lon, delta_time, height, file_list_subset, file_list, pattern
 # ----------------------------------------------------------------------------
 # ============================================================================
 
-# Function for changing delta_time to something legible. 
-# Once again, bootlegged from IceSat2 hackweek:
-# https://github.com/ICESAT-2HackWeek/ICESat-2-Hackweek-2023/blob/main/book/tutorials/Hydrology/convert_GPS_time.py 
+# Per this documentation:
+# https://nsidc.org/sites/default/files/icesat2_atl06_data_dict_v003_0.pdf
+# delta_time is seconds since 2018-01-01
 
-# The GPS epoch for IceSat2 is January 6, 1980 at 00:00)
+# Writing a function and using the .apply method should make this faster for large data. 
+def calendar_from_delta (delta_time):
+    # Make a datetime objct based on the ATL06 epoch
+    ATL06_epoch = dt.datetime(2018, 1, 1)
+    # Make time delta_time a datetime object (seconds)
+    delta_time_seconds = dt.timedelta(seconds = delta_time)
+    # Add the seconds since the ATL06 epoch to the epoch. 
+    date = delta_time_seconds + ATL06_epoch
+    return(date)
 
-# import datetime as dt
+# Run the function on the DataFrame. 
+IceSat2_Dataframe = combined_data.assign(date = combined_data['delta_time'].apply(calendar_from_delta))
 
-# t = combined_data.iloc[0:2000]
-
-# def calendar_from_delta (delta_time):
-#     # Make a datetime objct based on the GPS epoch. 
-#     gps_epoch_dt = dt.datetime(1980, 1, 6)
-#     # Make time object
-#     delta_time_seconds = dt.timedelta(seconds = delta_time)
-#     date = delta_time_seconds + gps_epoch_dt 
-    
-#     return(date)
-
-# t = t.assign(date = t['delta_time'].apply(calendar_from_delta))
-
-
-# %% 3. Write a .csv
+# %% 4. Write a .csv
 # ----------------------------------------------------------------------------
 # ============================================================================
 
