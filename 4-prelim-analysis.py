@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 
 # !!! Change this for different local machines
-working_dir = '/Users/jmaze/Documents/projects/IceSat2-Lakes'
+working_dir = '/Users/jtmaz/Documents/projects/IceSat2-Lakes'
 data_output = working_dir + '/data_output/'
 data_raw = working_dir + '/data_raw/'
 
@@ -54,10 +54,10 @@ def calendar_from_delta (delta_time):
     return(obs_date)
 
 # Run the function on the DataFrame. 
-lake_pts_icesat2 = lake_pts_icesat.assign(obs_date = lake_pts_icesat['delta_time'].apply(calendar_from_delta))
+lake_pts_icesat = lake_pts_icesat.assign(obs_date = lake_pts_icesat['delta_time'].apply(calendar_from_delta))
 
 #Checking on the function
-lake_pts_icesat2 = lake_pts_icesat2.sort_values('obs_date')
+lake_pts_icesat = lake_pts_icesat.sort_values('obs_date')
 
 # %%% 2.2 Summarize IceSat data by lake
 
@@ -65,10 +65,13 @@ lake_pts_icesat2 = lake_pts_icesat2.sort_values('obs_date')
 summary1 = lake_pts_icesat.groupby('LakeID').agg({'height': ['std', 'mean'],
                                                   'Area': 'first',
                                                   'LakeID': 'size',
+                                                  'obs_date': ['unique']
                                                   })
 
 # Change the column names for the summary dataframe. 
-summary1.columns = ['height_std', 'height_mean', 'lake_area', 'observation_count']
+summary1.columns = ['lake_height_std', 'lake_height_mean', 'lake_area', 
+                    'lake_observation_count', 'lake_obs_dates']
+
 
 # %%% 2.3 Query for lakes w. robust data
 
@@ -78,24 +81,27 @@ summary1_robust = summary1.query('height_std < 30 & observation_count > 25')
 # %%% 2.3 Visualize 
 
 # Relationship between observation count and height_std?
-summary1_robust.plot.scatter(x = 'observation_count', y = 'height_std')
+summary1_robust.plot.scatter(x = 'lake_observation_count', y = 'lake_height_std')
 # Relationship between lake_area and height_std?
-summary1_robust.plot.scatter(x = 'lake_area', y = 'height_std')
+summary1_robust.plot.scatter(x = 'lake_area', y = 'lake_height_std')
 # Relationship between lake_area and observation_count?
-summary1_robust.plot.scatter(x = 'lake_area', y = 'observation_count')
+summary1_robust.plot.scatter(x = 'lake_area', y = 'lake_observation_count')
 
 # %% 3. Plot the distributions of elevation by LakeID
 # ----------------------------------------------------------------------------
 # ============================================================================
 
-summary1_robust_sample = summary1_robust.iloc[0:20]
+# Slice a handfull of rows (LakeIDs) to make plotting more manageable. 
+# summary1_robust_sample = summary1_robust.iloc[0:20]
 
 # Isolate the best lakes from orgininal data
-robust_lake_pts = lake_pts_icesat[lake_pts_icesat['LakeID'].isin(summary1_robust_sample.index)]
+robust_lake_pts = lake_pts_icesat[lake_pts_icesat['LakeID'].isin(summary1_robust.index)]
 
+# Join info from robust summary to the lake pts. 
+t = 
 
 # Make new column for range from mean for each value
-#robust_lake_pts['diff_mean_height'] = robust_lake_pts
+robust_lake_pts['diff_mean_height'] = robust_lake_pts['height']
 
 # Make an array of good lake IDs
 robust_LakeIDs = robust_lake_pts['LakeID'].unique()
@@ -103,8 +109,8 @@ robust_LakeIDs = robust_lake_pts['LakeID'].unique()
 # Make the figure
 fig = plt.figure(figsize=[12, 8])
 # Designate number of cols and rows
-rows = 4
-cols = 5
+rows = 3
+cols = 4
 
 for i, lake_id in enumerate(robust_LakeIDs):
     plt.subplot(rows, cols, i + 1)
