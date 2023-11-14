@@ -11,7 +11,7 @@ Created on Sun Nov 12 16:34:39 2023
 # ============================================================================
 
 import geopandas as gpd
-import pandas as pd
+# import pandas as pd
 import matplotlib.pyplot as plt
 
 # !!! Change this for different local machines
@@ -39,7 +39,7 @@ summary1 = lake_pts_icesat.groupby('LakeID').agg({'height': ['std', 'mean'],
 summary1.columns = ['height_std', 'height_mean', 'lake_area', 'observation_count']
 
 # Filter lakes that don't have ridiculously high std?
-summary1_robust = summary1.query('height_std < 50 & observation_count > 10')
+summary1_robust = summary1.query('height_std < 30 & observation_count > 25')
 # Relationship between observation count and height_std?
 summary1_robust.plot.scatter(x = 'observation_count', y = 'height_std')
 # Relationship between lake_area and height_std?
@@ -51,15 +51,17 @@ summary1_robust.plot.scatter(x = 'lake_area', y = 'observation_count')
 # ----------------------------------------------------------------------------
 # ============================================================================
 
+summary1_robust_sample = summary1_robust.iloc[0:20]
+
 # Isolate the best lakes from orgininal data
-robust_lake_pts = lake_pts_icesat[lake_pts_icesat['LakeID'].isin(summary1_robust.index)]
+robust_lake_pts = lake_pts_icesat[lake_pts_icesat['LakeID'].isin(summary1_robust_sample.index)]
+
 
 # Make new column for range from mean for each value
-robust_lake_pts['']
+#robust_lake_pts['diff_mean_height'] = robust_lake_pts
+
 # Make an array of good lake IDs
 robust_LakeIDs = robust_lake_pts['LakeID'].unique()
-
-
 
 # Make the figure
 fig = plt.figure(figsize=[12, 8])
@@ -72,7 +74,7 @@ for i, lake_id in enumerate(robust_LakeIDs):
     # Match data to current Lake_ID
     dataplot = robust_lake_pts[robust_lake_pts['LakeID'] == lake_id]
     # Generate a histogram
-    plt.hist(dataplot['height'], bins = 25)
+    plt.hist(dataplot['height'], bins = 50)
     # Plot title
     plt.title(f'Lake ID = {lake_id}')
 
