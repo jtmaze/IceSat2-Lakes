@@ -109,28 +109,8 @@ for index, file_path in enumerate(file_list):
 del(data, df, lat, lon, delta_time, height, file_list_subset, file_list, pattern, subgroup, 
     ATL06_path, ATL06_reader, index)
     
-# %% 3. Convert delta_time to a datetime. 
-# ----------------------------------------------------------------------------
-# ============================================================================
 
-# Per this documentation:
-# https://nsidc.org/sites/default/files/icesat2_atl06_data_dict_v003_0.pdf
-# delta_time is seconds since 2018-01-01
-
-# Writing a function and using the .apply method should make this faster for large data. 
-def calendar_from_delta (delta_time):
-    # Make a datetime objct based on the ATL06 epoch
-    ATL06_epoch = dt.datetime(2018, 1, 1)
-    # Make time delta_time a datetime object (seconds)
-    delta_time_seconds = dt.timedelta(seconds = delta_time)
-    # Add the seconds since the ATL06 epoch to the epoch. 
-    date = delta_time_seconds + ATL06_epoch
-    return(date)
-
-# Run the function on the DataFrame. 
-IceSat2_Dataframe = combined_data.assign(date = combined_data['delta_time'].apply(calendar_from_delta))
-
-# %% 4. Write a .csv
+# %% 3. Write a .csv
 # ----------------------------------------------------------------------------
 # ============================================================================
 
