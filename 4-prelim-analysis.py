@@ -61,7 +61,7 @@ def calendar_from_delta (delta_time):
 # Run the function on the DataFrame. 
 lake_pts_icesat = lake_pts_icesat.assign(obs_date = lake_pts_icesat['delta_time'].apply(calendar_from_delta))
 
-# %%% Make a column to designate lake phase
+# %%% 2.3 Make a column to designate lake phase
 
 def lake_phaser (obs_date):
     # !!! Check with Johnny on this approximate designation
@@ -85,7 +85,7 @@ def lake_phaser (obs_date):
 # Run the function on the dataframe
 lake_pts_icesat = lake_pts_icesat.assign(lake_phase_est = lake_pts_icesat['obs_date'].apply(lake_phaser))
 
-# %%% 2.3 Summarize IceSat data by lake
+# %%% 2.4 Summarize IceSat data by lake
 
 # Generate an interesting summary table for each lake
 summary1 = lake_pts_icesat.groupby('LakeID').agg({'height': ['std', 'mean'],
@@ -102,13 +102,13 @@ summary1.columns = ['LakeID', 'lake_height_std', 'lake_height_mean', 'lake_area'
                    'lake_observation_count','lake_obs_dates', 'unique_dates_count']
 
 
-# %%% 2.4 Query for lakes w. robust data
+# %%% 2.5 Query for lakes w. robust data
 
 # Query lakes that don't have ridiculously large height stdv
 # Also get lakes with a sizeable observation count
 summary1_robust = summary1.query('lake_height_std < 30 & lake_observation_count > 25')
 
-# %%% 2.5 Visualize summary stats for 'robust' and original datasets
+# %%% 2.6 Visualize summary stats for 'robust' and original datasets
 
 # Relationship between observation count and height_std?
 summary1.plot.scatter(x = 'lake_observation_count', y = 'lake_height_std')
@@ -127,6 +127,8 @@ summary1_robust.plot.scatter(x = 'lake_area', y = 'unique_dates_count')
 # ----------------------------------------------------------------------------
 # ============================================================================
 
+# %%% 3.1 Subset and reformat the data for plotting
+
 # Isolate the best lakes from orgininal IceSat data
 robust_lake_pts = lake_pts_icesat[lake_pts_icesat['LakeID'].isin(summary1_robust['LakeID'])]
 
@@ -136,29 +138,29 @@ robust_lake_pts = pd.merge(robust_lake_pts,
                             how = 'left', 
                             on = 'LakeID')
 
-# Make new column for range from mean for each value
+# Make new column for difference from mean for each value
 robust_lake_pts['diff_from_mean'] = (robust_lake_pts['height'] - robust_lake_pts['lake_height_mean'])
-            
-
 #!!! Filter lake pts based on the distance from the mean
 robust_lake_pts = robust_lake_pts.query('-100 < diff_from_mean < 100')
 
 # Subset the data by LakeID for plotting
-subset_LakeIDs = summary1_robust['LakeID'].iloc[36:52]
-subset_lake_pts = robust_lake_pts[robust_lake_pts['LakeID'].isin(subset_LakeIDs)]
+# Choose the LakeIDs with lowest standard deviation for height. 
+subset_LakeIDs = summary1_robust.sort_values('lake_height_std').iloc[0:20]
+subset_LakeIDs_series = pd.Series(subset_LakeIDs['LakeID'])
+subset_lake_pts = robust_lake_pts[robust_lake_pts['LakeID'].isin(subset_LakeIDs_series)]
 
 
-# Make the figure
+# %%% 3.2 Make the figure
 fig = plt.figure(figsize=[12, 8])
 # Designate number of cols and rows
 rows = 4
-cols = 4
+cols = 5
 colors_dict = {'frozen': 'blue', 'intermediate': 'green', 'liquid': 'red'}
 
-for i, lake_id in enumerate(subset_LakeIDs):
+for i, lake_id in enumerate(subset_LakeIDs_series):
     plt.subplot(rows, cols, i + 1)
     # Match data to current Lake_ID
-    dataplot = robust_lake_pts[robust_lake_pts['LakeID'] == lake_id]
+    dataplot = subset_lake_pts[subset_lake_pts['LakeID'] == lake_id]
     # Get lake phases for each LakeID
     lake_phases = dataplot['lake_phase_est'].unique()
     # Itereate through lake phases and plot color bars
@@ -166,8 +168,8 @@ for i, lake_id in enumerate(subset_LakeIDs):
         phase_data = dataplot[dataplot['lake_phase_est'] == lake_phase]['diff_from_mean']
         # Generate a histogram
         plt.hist(phase_data, bins = 25, 
-                 color = colors_dict.get(lake_phase, 'grey')
-    # Plot title
+                 color = colors_dict.get(lake_phase, 'grey'))
+                 # Plot title
     plt.title(f'Lake ID = {lake_id}')
     
 
@@ -175,7 +177,7 @@ plt.tight_layout()
 plt.show()
 
     
-# %% 3. Make maps of some lakes. 
+# %% 4. Make maps of some lakes. 
 # ----------------------------------------------------------------------------
 # ============================================================================   
     
