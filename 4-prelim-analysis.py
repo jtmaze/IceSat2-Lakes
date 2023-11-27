@@ -14,9 +14,10 @@ import geopandas as gpd
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime as dt
+import geoplot as gplt
 
 # !!! Change this for different local machines
-working_dir = '/Users/jmaze/Documents/projects/IceSat2-Lakes'
+working_dir = '/Users/jtmaz/Documents/projects/IceSat2-Lakes'
 data_output = working_dir + '/data_output/'
 data_raw = working_dir + '/data_raw/'
 
@@ -28,6 +29,12 @@ data_raw = working_dir + '/data_raw/'
 
 # Read the lake boundaries?
 gr_lakes = gpd.read_file(data_raw + 'Greenland_IIML_2017.shp')
+# Lakes were imported with out a crs need to assign one.
+print(gr_lakes.crs is None)
+# Assinging manually from documentation WGS_1984_UTM_Zone_24N 
+crs_proj = 'EPSG:32624' 
+# Define crs for the Greenland Lakes
+gr_lakes = gr_lakes.set_crs(crs = crs_proj)
 
 # Read the filtered IceSat2 points. 
 lake_pts_icesat = gpd.read_file(data_output + 'lake_pts_icesat.shp')
@@ -66,7 +73,8 @@ lake_pts_icesat = lake_pts_icesat.assign(obs_date = lake_pts_icesat['delta_time'
 def lake_phaser (obs_date):
     # !!! Check with Johnny on this approximate designation
     szn_dict = {'frozen': [11, 12, 1, 2, 3, 4], # Nov thru April are frozen?
-                'intermediate': [5, 10], # May and Oct are intermediate?
+                'intermediate_spring': [5], 
+                'intermediate_fall': [10], # May and Oct are intermediate?
                 'liquid': [6, 7, 8, 9]} # June, July, August and September are liquid?
     
     month = obs_date.month # Extract the month from the datetime object. 
@@ -74,11 +82,12 @@ def lake_phaser (obs_date):
     # Designate lake_phase_est based on szn_dict
     if month in szn_dict['frozen']:
         lake_phase_est = 'frozen'
-    if month in szn_dict['intermediate']:
-        lake_phase_est = 'intermediate'
+    if month in szn_dict['intermediate_spring']:
+        lake_phase_est = 'intermediate_spring'
+    if month in szn_dict['intermediate_fall']:
+        lake_phase_est = 'intermediate_fall'
     if month in szn_dict['liquid']:
         lake_phase_est = 'liquid'
-        
 
     return(lake_phase_est)
 
@@ -106,7 +115,7 @@ summary1.columns = ['LakeID', 'lake_height_std', 'lake_height_mean', 'lake_area'
 
 # Query lakes that don't have ridiculously large height stdv
 # Also get lakes with a sizeable observation count
-summary1_robust = summary1.query('lake_height_std < 30 & lake_observation_count > 25')
+summary1_robust = summary1.query('lake_height_std < 30 & lake_observation_count > 15')
 
 # %%% 2.6 Visualize summary stats for 'robust' and original datasets
 
@@ -146,16 +155,21 @@ robust_lake_pts = robust_lake_pts.query('-100 < diff_from_mean < 100')
 # Subset the data by LakeID for plotting
 # Choose the LakeIDs with lowest standard deviation for height. 
 subset_LakeIDs = summary1_robust.sort_values('lake_height_std').iloc[0:20]
+# Create a series with the lowest standard dev of lake IDs
 subset_LakeIDs_series = pd.Series(subset_LakeIDs['LakeID'])
+# Subset the lake points for plotting
 subset_lake_pts = robust_lake_pts[robust_lake_pts['LakeID'].isin(subset_LakeIDs_series)]
 
+# Clean up variables
+# del(summary1, summary1_robust, lake_pts_icesat)
 
 # %%% 3.2 Make the figure
 fig = plt.figure(figsize=[12, 8])
 # Designate number of cols and rows
 rows = 4
 cols = 5
-colors_dict = {'frozen': 'blue', 'intermediate': 'green', 'liquid': 'red'}
+colors_dict = {'frozen': 'grey', 'intermediate_spring': 'green', 
+               'liquid': 'blue', 'intermediate_fall': 'red'}
 
 for i, lake_id in enumerate(subset_LakeIDs_series):
     plt.subplot(rows, cols, i + 1)
@@ -176,13 +190,23 @@ for i, lake_id in enumerate(subset_LakeIDs_series):
 plt.tight_layout()
 plt.show()
 
+del(i, lake_id, lake_phase, lake_phases, phase_data, 
+    rows, cols, colors_dict, dataplot, fig)
     
 # %% 4. Make maps of some lakes. 
 # ----------------------------------------------------------------------------
 # ============================================================================   
+
+# Not sure how geoplot is better than matplotlib?
+map_ID = '3250'
+shape = gr_lakes.query('LakeID == 3250')
+points = robust_lake_pts.query('LakeID == 3250')
+
+
+ax = gplt.polyplot(shape)
+gplt.pointplot(points, ax=ax)
     
-    
-    
+gplt.show()
 
 
 
