@@ -18,7 +18,6 @@ import glob
 import os
 import h5py
 import pandas as pd
-import datetime as dt
 
 # !!! Change this line for different local machines
 working_dir = '/Users/jmaze/Documents/projects/IceSat2-Lakes'
