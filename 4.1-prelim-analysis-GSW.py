@@ -14,6 +14,7 @@ import geopandas as gpd
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime as dt
+import seaborn as sns
 
 # !!! Change this for different local machines
 working_dir = '/Users/jmaze/Documents/projects/IceSat2-Lakes'
@@ -124,15 +125,28 @@ summary1.columns = ['area_rank_id', 'lake_height_std', 'lake_height_mean', 'lake
 # Also get lakes with a sizeable observation count
 summary1_robust = summary1.query('lake_height_std < 30 & lake_observation_count > 100 & unique_dates_count > 8')
 
+# Make a is_robust column for summary1
+summary1['is_robust'] = summary1['area_rank_id'].isin(summary1_robust['area_rank_id'])
 
 # %%% 2.6 Visualize summary stats for 'robust' and original datasets
 
 # Relationship between observation count and height_std?
 summary1.plot.scatter(x = 'lake_observation_count', y = 'lake_height_std')
 summary1_robust.plot.scatter(x = 'lake_observation_count', y = 'lake_height_std')
+
 # Relationship between lake_area and height_std?
-summary1.plot.scatter(x = 'lake_area', y = 'lake_height_std')
-summary1_robust.plot.scatter(x = 'lake_area', y = 'lake_height_std')
+# !!! Made this figure nicer for the report
+scatter = plt.scatter(x = summary1['lake_area'], y = summary1['lake_height_std'],
+                      s = 5, c = summary1['is_robust'], cmap = 'Set3')
+
+# Work on the axes
+plt.yscale('log')
+plt.xlabel('Log of lake area (square kilometers)')
+plt.xscale('log')
+plt.ylabel('Log of segments standard deviation by lake (m)')
+plt.title('Relationship between Lake Area and Segment Variability')
+
+
 # Relationship between lake_area and total observation_count?
 summary1.plot.scatter(x = 'lake_area', y = 'lake_observation_count')
 summary1_robust.plot.scatter(x = 'lake_area', y = 'lake_observation_count')
@@ -171,8 +185,12 @@ subset_lake_pts = robust_lake_pts[(robust_lake_pts['obs_date'] > start_date)
 
 
 # Subset the data by LakeID for plotting
-# Choose the LakeIDs with lowest standard deviation for height. 
-subset_LakeIDs = summary1_robust.sort_values('lake_height_std').iloc[0:25]
+# Choose the LakeIDs with lowest standard deviation for height.
+#subset_LakeIDs = summary1_robust.sort_values('lake_height_std').iloc[0:4]
+
+# Choose the LakeIDs from a random sample
+shuffled_sum1_robust = summary1_robust.sample(frac = 1, random_state = 42)
+subset_LakeIDs = shuffled_sum1_robust[0:30]
 # Create a series with the lowest standard dev of lake IDs
 subset_LakeIDs_series = pd.Series(subset_LakeIDs['area_rank_id'])
 # Subset the lake points for plotting
@@ -182,18 +200,20 @@ subset_lake_pts = subset_lake_pts[subset_lake_pts['area_rank_id'].isin(subset_La
 # del(summary1, summary1_robust, lake_pts_icesat)
 
 # %%% 3.2 Make the figure
+
 fig = plt.figure(figsize=[12, 8])
 # Designate number of cols and rows
-rows = 5
+rows = 6
 cols = 5
 colors_dict = {'frozen': 'grey', 'intermediate_spring': 'green', 
                'liquid': 'blue', 'intermediate_fall': 'red'}
 
-subset_min = subset_lake_pts['diff_from_mean'].min()
-subset_max = subset_lake_pts['diff_from_mean'].max()
+subset_min = -2
+subset_max = 2
 
 # Need a list to hold legend patches. 
 legend_patches = []
+
 
 for i, lake_id in enumerate(subset_LakeIDs_series):
     plt.subplot(rows, cols, i + 1)
@@ -213,11 +233,23 @@ for i, lake_id in enumerate(subset_LakeIDs_series):
 
 
 plt.tight_layout()
+plt.xlabel('Difference from mean elevation')
 plt.show()
+
 
 
 del(i, lake_id, lake_phase, lake_phases, phase_data, 
     rows, cols, colors_dict, dataplot, fig, subset_min, subset_max)
+
+# %%% 3.3 Make plots for single lakes
+
+one_lake_pts = subset_lake_pts.query("area_rank_id == 'ID_1383'")
+
+sns.histplot(data = one_lake_pts, x = 'height', bins = 25, hue = 'obs_date', 
+             multiple = 'stack', palette = 'Dark2')
+plt.title('Lake ID_1383 Water Year 2022')
+plt.xlabel('Elevation (m)')
+plt.show()
     
 # %% 4. Make maps of some lakes. 
 # ----------------------------------------------------------------------------
