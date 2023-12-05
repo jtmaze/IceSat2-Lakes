@@ -113,7 +113,7 @@ del(data, df, lat, lon, delta_time, height, file_list_subset, file_list, pattern
 # ----------------------------------------------------------------------------
 # ============================================================================
 
-combined_data.to_csv(data_intermediate + 'IceSat2_Dataframe.csv')
+combined_data.to_csv(data_intermediate + 'IceSat2_Dataframe_v1.csv')
 
 
 

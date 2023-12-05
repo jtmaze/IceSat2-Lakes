@@ -46,11 +46,8 @@ print(gsw_lakes.crs is None)
 lake_pts = gpd.read_file(data_output + 'GSW_lake_pts_icesat.shp')
 
 # Need to make the LakeID a string
-lake_pts = lake_pts.drop(columns = ['LakeID'])
 lake_pts = lake_pts.rename(columns = {'area_rank_': 'area_rank_id'})
 
-# How many points are we looking at per lake?
-(lake_pts['area_rank_id'].value_counts())
 
 # %%% 2.2 Convert delta_time to a legible date
 
