@@ -34,24 +34,24 @@ crs_proj = 'EPSG:32624'
 # %%% 2.1 Import the Lakes
 LakesIIML = gpd.read_file(data_raw + 'IIML_raw_lakes2017.shp')
 
-LakesGSWE = gpd.read_file(data_raw + 'GSWE_raw_lakes.shp')
+LakesGSWO = gpd.read_file(data_raw + 'GSWO_raw_lakes.shp')
 
 # %%%% 2.1.1 Reformat GSWE Lakes
 
 # Assinging CRS from documentation and reproject
-crs_LakesGSWE = 'EPSG:4326'
-LakesGSWE = LakesGSWE.set_crs(crs = crs_LakesGSWE)
-LakesGSWE = LakesGSWE.to_crs(crs = crs_proj)
+crs_LakesGSWO = 'EPSG:4326'
+LakesGSWO = LakesGSWO.set_crs(crs = crs_LakesGSWO)
+LakesGSWO = LakesGSWO.to_crs(crs = crs_proj)
                              
 # Make a new area column old one was in decimal degrees
-LakesGSWE['area_m2'] = LakesGSWE.geometry.area
+LakesGSWO['area_m2'] = LakesGSWO.geometry.area
 
 # Make a id column from ranking lake area
-LakesGSWE['area_rank_id'] = LakesGSWE['area_m2'].rank(method = 'first', ascending = False).astype(int)
-LakesGSWE['area_rank_id'] = 'ID_' + LakesGSWE['area_rank_id'].astype(str)
+LakesGSWO['area_rank_id'] = LakesGSWO['area_m2'].rank(method = 'first', ascending = False).astype(int)
+LakesGSWO['area_rank_id'] = 'ID_' + LakesGSWO['area_rank_id'].astype(str)
 
 # Drop the original degrees area column
-LakesGSWE = LakesGSWE.drop(columns = 'area')
+LakesGSWO = LakesGSWO.drop(columns = 'area')
 
 # %%%% 2.1.2 Reformat the IIML lakes
 
@@ -61,7 +61,7 @@ LakesIIML = LakesIIML.drop(columns = ['LakeName', 'Source', 'NumOfSate', 'Certai
 LakesIIML.rename(columns = {'Area':'area_m2', 'Length':'length_m', 'LakeID':'lake_id'}, inplace = True)
 
 # %%% 2.2 Write the reformatted lake files to output
-LakesGSWE.to_file(data_intermediate + 'LakesGSWE_v2.shp', index = False)
+LakesGSWO.to_file(data_intermediate + 'LakesGSWO_v2.shp', index = False)
 LakesIIML.to_file(data_intermediate + 'LakesIIML_v2.shp', index = False)
 
 # %%% 2.3 Import the project boundary
@@ -83,7 +83,7 @@ bound_box = bound_box['geometry']
 
 # Using using the geopandas.clip(), documentation is incorrect online
 LakesIIML = gpd.clip(LakesIIML, bound_box)
-LakesGSWE = gpd.clip(LakesGSWE, bound_box)
+LakesGSWO = gpd.clip(LakesGSWO, bound_box)
 
 # Check out the area distribution of different lake datasets
 # IIML lakes
@@ -91,7 +91,7 @@ plt.hist(LakesIIML['area_m2'], bins = 50)
 plt.show()
 
 # GSWE lakes
-plt.hist(LakesGSWE['area_m2'], bins = 50)
+plt.hist(LakesGSWO['area_m2'], bins = 50)
 plt.show()
 
 # %% 3. Import the IceSat2 data & make them gpd object
@@ -120,9 +120,9 @@ IceSatJoinedIIML = gpd.sjoin(IceSatPts,
                              how = 'inner', # Eliminates IceSat points not matched with a Lake
                              op = 'within') # Icesat points need to be inside a lake
 
-#Spatially join the IceSat points to the GSWE lakes
-IceSatJoinedGSWE = gpd.sjoin(IceSatPts, 
-                             LakesGSWE, 
+#Spatially join the IceSat points to the GSWO lakes
+IceSatJoinedGSWO = gpd.sjoin(IceSatPts, 
+                             LakesGSWO, 
                               how = 'inner',
                               op = 'within')
 
@@ -130,7 +130,7 @@ IceSatJoinedGSWE = gpd.sjoin(IceSatPts,
 IceSatJoinedIIML = IceSatJoinedIIML.drop(columns = ['index_right', 'Unnamed: 0', 'lat', 'lon'])
 
 # Reformat the columns for GSWE
-IceSatJoinedGSWE.drop(columns = ['Unnamed: 0', 'lat', 'lon', 'index_right'], inplace = True)
+IceSatJoinedGSWO.drop(columns = ['Unnamed: 0', 'lat', 'lon', 'index_right'], inplace = True)
 
 # %% 5. Write the files to intermediate folder
 # ----------------------------------------------------------------------------
@@ -140,7 +140,7 @@ IceSatJoinedGSWE.drop(columns = ['Unnamed: 0', 'lat', 'lon', 'index_right'], inp
 IceSatJoinedIIML.to_file(data_intermediate + 'ICESat2_pts_IIML.shp', index = False) 
                                        
 # Write the spatially joined file to output
-IceSatJoinedGSWE.to_file(data_intermediate + 'ICESat2_pts_GSWE.shp', index = False) 
+IceSatJoinedGSWO.to_file(data_intermediate + 'ICESat2_pts_GSWO.shp', index = False) 
 
 
 
