@@ -50,7 +50,7 @@ LakesGSWO.rename(columns = {'area_rank_': 'area_rank_id', 'height': 'z'}, inplac
 # Writing a function and using the .apply method should make this faster for large data. 
 def calendar_from_delta (delta_time):
     
-    # Make a datetime objct based on the ATL06 epoch
+    # Make a datetime object based on the ATL06 epoch
     ATL06_epoch = dt.datetime(2018, 1, 1)
     # Make time delta_time a datetime object (seconds)
     delta_time_seconds = dt.timedelta(seconds = delta_time)
@@ -91,17 +91,17 @@ IceSatPts = IceSatPts.assign(wtr_yr = IceSatPts['obs_date'].apply(wtr_yr_from_ca
 # Remove the worst IceSat2 points there's pts with elevation above Greenland's 
 # maximum, almost 170,239 of these.
 n = len(IceSatPts.query('z > 10000'))
+del(n)
 IceSatPts.query('z < 10000', inplace = True)
 
 Summary = IceSatPts.groupby(['area_rank_id', 'wtr_yr'], as_index = False).agg(
     z_mean = ('z', 'mean'),
     z_std = ('z', 'std'),
-    obs_count = ('area_rank_id', 'size'),
+    obs_count = ('z', 'count'),
     area_m2 = ('area_m2', 'first'),
     obs_dates_list = ('obs_date', lambda x: x.unique().astype(str).tolist()),
     obs_date_unique = ('obs_date', lambda x: len(x.unique().astype(str).tolist()))
     )
-
 
 # %% 5. Visualize Summary Stats and Apply Thresholding
 # ----------------------------------------------------------------------------
